@@ -11,79 +11,61 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, UploadCloud, CheckCircle, XCircle, Info } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+import { Loader2, UploadCloud } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 export default function ImageDetectionPage() {
 	const [selectedImage, setSelectedImage] = useState(null);
 	const [previewUrl, setPreviewUrl] = useState(null);
-	const [detectionResult, setDetectionResult] = useState(null);
-	const [explanationResult, setExplanationResult] = useState(null);
-	const [status, setStatus] = useState("idle"); // 'idle' | 'uploading' | 'detecting' | 'explaining' | 'success' | 'error'
-	const [error, setError] = useState(null);
+	const [isLoading, setIsLoading] = useState(false);
 	const { toast } = useToast();
+	const [Result, setResult] = useState(null);
+	const isRust = Result?.prediction === "rust";
+
 	const handleImageChange = (event) => {
 		const file = event.target.files?.[0];
 		if (file) {
-			// Basic validation
 			if (!file.type.startsWith("image/")) {
-				setError("Please select a valid image file (PNG, JPG, etc.).");
-				setStatus("error");
-				setSelectedImage(null);
-				setPreviewUrl(null);
-				setDetectionResult(null);
-				setExplanationResult(null);
+				toast({
+					title: "Warning",
+					discrebtion: "Provide an image ...",
+				});
 				return;
 			}
-			// Max size 5MB
-			if (file.size > 5 * 1024 * 1024) {
-				setError("Image size should not exceed 5MB.");
-				setStatus("error");
-				setSelectedImage(null);
-				setPreviewUrl(null);
-				setDetectionResult(null);
-				setExplanationResult(null);
-				return;
-			}
-
 			setSelectedImage(file);
 			setPreviewUrl(URL.createObjectURL(file));
-			setDetectionResult(null);
-			setExplanationResult(null);
-			setError(null);
-			setStatus("idle");
 		}
 	};
 
 	const handleDetectClick = async () => {
-		toast({
-			variant: "destructive",
-			title: "Error ",
-			description: "something went wrong",
-		});
-		if (!selectedImage) {
-			setError("Please select an image first.");
-			setStatus("error");
-			return;
-		}
-	};
+		setResult(null);
+		setIsLoading(true);
+		const formData = new FormData();
+		formData.append("image", selectedImage);
+		try {
+			const response = await fetch(
+				"https://mschabane-rustdetective.hf.space/predict",
+				{
+					method: "Post",
+					body: formData,
+				}
+			);
 
-	const renderResultIcon = (resultText) => {
-		const lowerCaseText = resultText.toLowerCase();
-		if (
-			lowerCaseText.includes("no corrosion") ||
-			lowerCaseText.includes("not detected")
-		) {
-			return <CheckCircle className="h-5 w-5 text-green-600" />;
-		} else if (
-			lowerCaseText.includes("corrosion detected") ||
-			lowerCaseText.includes("detected")
-		) {
-			// Assuming primary color is rust-like for detected corrosion
-			return <XCircle className="h-5 w-5 text-primary" />;
+			const data = await response.json();
+			if (data.error) {
+				toast({
+					title: "Error",
+					discrebtion: "Provide an image ...",
+				});
+				return;
+			}
+			setResult(data);
+		} catch (error) {
+			console.log(error);
+		} finally {
+			setIsLoading(false);
 		}
-		// Default icon for ambiguous or other statuses
-		return <Info className="h-5 w-5 text-muted-foreground" />;
 	};
 
 	return (
@@ -114,7 +96,7 @@ export default function ImageDetectionPage() {
 							<span className="block font-medium text-foreground">
 								{selectedImage
 									? `Selected: ${selectedImage.name}`
-									: "Click or drag file to upload"}
+									: "Click to file to upload"}
 							</span>
 							<span className="block text-sm text-muted-foreground mt-1">
 								Max file size: 5MB
@@ -134,8 +116,8 @@ export default function ImageDetectionPage() {
 								<Image
 									src={previewUrl}
 									alt="Selected image preview"
-									fill // Use fill instead of layout="fill"
-									sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Provide sizes
+									fill
+									sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
 									style={{ objectFit: "contain" }} // Use style for objectFit
 								/>
 							</div>
@@ -144,130 +126,63 @@ export default function ImageDetectionPage() {
 
 					<Button
 						onClick={handleDetectClick}
-						disabled={
-							!selectedImage ||
-							status === "detecting" ||
-							status === "explaining"
-						}
-						className="w-full"
+						className="w-full text-lg capitalize"
+						disabled={isLoading ? true : previewUrl == null}
 						size="lg"
-						aria-live="polite" // Announce changes for screen readers
+						aria-live="polite"
 					>
-						{status === "detecting" && (
-							<Loader2
-								className="mr-2 h-5 w-5 animate-spin"
-								aria-hidden="true"
-							/>
+						{isLoading ? (
+							<span className="flex gap-3 items-center">
+								<Loader2 className=" animate-spin" />
+								predicting...
+							</span>
+						) : (
+							"Predict"
 						)}
-						{status === "explaining" && (
-							<Loader2
-								className="mr-2 h-5 w-5 animate-spin"
-								aria-hidden="true"
-							/>
-						)}
-						{status === "detecting"
-							? "Analyzing Image..."
-							: status === "explaining"
-							? "Generating Explanation..."
-							: "Detect Corrosion"}
 					</Button>
 				</CardContent>
 			</Card>
+			{Result && (
+				<Card className="max-w-2xl mx-auto mb-8 shadow-md">
+					<CardHeader>
+						<CardTitle>Result</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className=" flex flex-col gap-3">
+							<div
+								className={`flex justify-between rounded items-center px-2 ${
+									isRust
+										? "text-orange-900 bg-orange-200"
+										: "text-green-900 bg-green-100"
+								}  `}
+							>
+								<p
+									className={`capitalize py-3  rounded text-xl font-bold  flex-1  `}
+								>
+									{Result.prediction}
+								</p>
 
-			{/* Error Alert - Displayed only when error is not null */}
-			{error && (
-				<Alert
-					variant="destructive"
-					className="max-w-2xl mx-auto mb-8"
-					role="alert"
-				>
-					<XCircle className="h-4 w-4" aria-hidden="true" />
-					<AlertTitle>Error</AlertTitle>
-					<AlertDescription>{error}</AlertDescription>
-				</Alert>
+								<Badge
+									className={`py-1 px-3 rounded-full font-bold text-sm text-white ${
+										isRust ? "bg-orange-950   " : "bg-green-900 "
+									} hover:${isRust ? "bg-orange-950   " : "bg-green-900 "}`}
+								>
+									{Result.probability + " %"}
+								</Badge>
+							</div>
+							<div className=" w-full h-96 relative rounded-md overflow-hidden border shadow-sm bg-muted/30">
+								<Image
+									src={Result.uri ? Result.uri : previewUrl}
+									alt="Result of prediction"
+									fill
+									sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+									style={{ objectFit: "contain" }} // Use style for objectFit
+								/>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
 			)}
-
-			{/* Loading Indicator - Displayed during detection or explanation */}
-			{(status === "detecting" || status === "explaining") && (
-				<div
-					className="text-center max-w-2xl mx-auto mt-8 flex items-center justify-center text-muted-foreground"
-					aria-live="polite"
-				>
-					<Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
-					<span>
-						{status === "detecting"
-							? "Processing image and detecting corrosion..."
-							: "Generating AI explanation..."}
-					</span>
-				</div>
-			)}
-
-			{/* Results Section - Displayed on success or if detection finished but explanation failed */}
-			{(status === "success" || (status === "error" && detectionResult)) &&
-				detectionResult && (
-					<div className="max-w-2xl mx-auto space-y-6">
-						<Card className="shadow-sm">
-							<CardHeader>
-								<CardTitle>Detection Results</CardTitle>
-								<CardDescription>
-									Simulated analysis results from AI models.
-								</CardDescription>
-							</CardHeader>
-							<CardContent className="space-y-4">
-								<div className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
-									<span className="font-medium text-sm sm:text-base">
-										MobileNetV3:
-									</span>
-									<div className="flex items-center gap-2">
-										{renderResultIcon(detectionResult.mobileNetV3)}
-										<span className="text-sm font-semibold text-right">
-											{detectionResult.mobileNetV3}
-										</span>
-									</div>
-								</div>
-								<div className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
-									<span className="font-medium text-sm sm:text-base">
-										YOLOv9:
-									</span>
-									<div className="flex items-center gap-2">
-										{renderResultIcon(detectionResult.yolov9)}
-										<span className="text-sm font-semibold text-right">
-											{detectionResult.yolov9}
-										</span>
-									</div>
-								</div>
-							</CardContent>
-						</Card>
-
-						{/* Display Explanation Card only if explanation succeeded (status is success) */}
-						{status === "success" && explanationResult && (
-							<Card className="shadow-sm">
-								<CardHeader>
-									<CardTitle>AI Explanation</CardTitle>
-									<CardDescription>
-										Impact of detected corrosion on structural integrity.
-									</CardDescription>
-								</CardHeader>
-								<CardContent>
-									<p className="text-sm text-muted-foreground leading-relaxed">
-										{explanationResult.explanation}
-									</p>
-								</CardContent>
-							</Card>
-						)}
-						{/* Optionally, add a note if explanation failed but detection succeeded */}
-						{status === "error" && detectionResult && !explanationResult && (
-							<Alert variant="default" className="mt-4">
-								<Info className="h-4 w-4" />
-								<AlertTitle>Note</AlertTitle>
-								<AlertDescription>
-									Detection results are shown above. The AI explanation could
-									not be generated due to an error.
-								</AlertDescription>
-							</Alert>
-						)}
-					</div>
-				)}
 		</div>
 	);
 }

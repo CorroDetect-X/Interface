@@ -84,17 +84,14 @@ export default function Home() {
 					</ul>
 				</div>
 				<div className="relative h-80 w-full overflow-hidden rounded-lg shadow-lg">
-					{
-						//put image here
-						<Image
-							src=""
-							alt="Corrosion example"
-							fill // Changed from layout="fill"
-							style={{ objectFit: "cover" }} // Changed from objectFit="cover"
-							data-ai-hint="rusted metal bridge"
-							className="transform hover:scale-105 transition-transform duration-300"
-						/>
-					}
+					<Image
+						src="/rusty-97178_640.jpg"
+						alt="Corrosion example"
+						fill
+						style={{ objectFit: "cover" }}
+						data-ai-hint="rusted metal bridge"
+						className="transform hover:scale-105 transition-transform duration-300"
+					/>
 				</div>
 			</section>
 

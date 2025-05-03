@@ -15,7 +15,7 @@ const accuracyData = [
 	{ epoch: "5", MobileNetV3: 0.82, YOLOv9: 0.8 },
 	{ epoch: "10", MobileNetV3: 0.88, YOLOv9: 0.85 },
 	{ epoch: "15", MobileNetV3: 0.91, YOLOv9: 0.89 },
-	{ epoch: "20", MobileNetV3: 0.93, YOLOv9: 0.91 },
+	{ epoch: "20", MobileNetV3: 0.98, YOLOv9: 0.91 },
 ];
 
 const lossData = [
@@ -28,11 +28,11 @@ const lossData = [
 
 const modelInfo = [
 	{
-		name: "MobileNetV3 (Small)",
-		version: "3.0 (Small variant)",
+		name: "MobileNetV3 (Large)",
+		version: "3.0 (Large variant)",
 		description:
 			"A lightweight and efficient convolutional neural network designed for mobile and embedded vision applications. Excels at classification tasks.",
-		accuracy: "93%",
+		accuracy: "94%",
 		keyFeatures: [
 			"High efficiency",
 			"Low latency",
