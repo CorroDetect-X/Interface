@@ -20,8 +20,8 @@ export default function ImageDetectionPage() {
 	const [previewUrl, setPreviewUrl] = useState(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const { toast } = useToast();
-	const [Result, setResult] = useState(null);
-	const isRust = Result?.prediction === "rust";
+	const [result, setResult] = useState(null);
+	const isRust = result?.prediction === "rust";
 
 	const handleImageChange = (event) => {
 		setResult(null);
@@ -159,7 +159,7 @@ export default function ImageDetectionPage() {
 								<p
 									className={`capitalize py-3  rounded text-xl font-bold  flex-1  `}
 								>
-									{Result.prediction}
+									{result.prediction}
 								</p>
 
 								<Badge
@@ -167,12 +167,12 @@ export default function ImageDetectionPage() {
 										isRust ? "bg-orange-950   " : "bg-green-900 "
 									} hover:${isRust ? "bg-orange-950   " : "bg-green-900 "}`}
 								>
-									{Result.probability + " %"}
+									{result.probability + " %"}
 								</Badge>
 							</div>
 							<div className=" w-full h-96 relative rounded-md overflow-hidden border shadow-sm bg-muted/30">
 								<Image
-									src={Result.uri ? Result.uri : previewUrl}
+									src={result.uri ? Result.uri : previewUrl}
 									alt="Result of prediction"
 									fill
 									sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
