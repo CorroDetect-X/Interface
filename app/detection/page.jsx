@@ -24,6 +24,7 @@ export default function ImageDetectionPage() {
 	const isRust = Result?.prediction === "rust";
 
 	const handleImageChange = (event) => {
+		setResult(null);
 		const file = event.target.files?.[0];
 		if (file) {
 			if (!file.type.startsWith("image/")) {
@@ -39,7 +40,6 @@ export default function ImageDetectionPage() {
 	};
 
 	const handleDetectClick = async () => {
-		setResult(null);
 		setIsLoading(true);
 		const formData = new FormData();
 		formData.append("image", selectedImage);
